@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>기본 계산기</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;background:#f2f4f8;color:#172338;font-family:Arial,'Malgun Gothic',sans-serif;padding:24px}main{width:min(100%,370px)}header{text-align:center;margin-bottom:24px}h1{font-size:25px;margin:0 0 10px;letter-spacing:-1px}header p,footer{font-size:13px;color:#798395}.calculator{background:#fff;padding:22px;border:1px solid #e5e9ef;border-radius:28px;box-shadow:0 20px 60px #23345412}.screen{background:#f7f9fc;border-radius:16px;padding:22px 16px;margin-bottom:20px;text-align:right;overflow:hidden}.expression{height:22px;font-size:14px;color:#8490a3;white-space:nowrap}output{display:block;font-size:40px;line-height:1.5;font-weight:600;overflow-x:auto;white-space:nowrap;letter-spacing:-1.5px}.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}button{border:0;border-radius:14px;min-height:62px;font:500 22px Arial;cursor:pointer;background:#f1f4f8;color:#26364e;transition:background .15s,transform .1s}button:hover{background:#e3e9f2}button:active{transform:scale(.94)}button:focus-visible{outline:3px solid #839bfa;outline-offset:2px}.utility{font-size:17px;color:#65738a}.operator{background:#edf0ff;color:#5365cf}.equals{background:#5266db;color:white}.equals:hover{background:#4054c8}.zero{grid-column:span 2}footer{text-align:center;margin-top:22px;line-height:1.8;font-size:12px}
+.comments{margin-top:22px;background:white;border:1px solid #e5e9ef;border-radius:22px;padding:22px}.comments h2{font-size:19px;margin:0 0 18px}.comments label{display:block;font-size:13px;margin:12px 0 6px}.comments input,.comments textarea{width:100%;border:1px solid #d8dfeb;border-radius:10px;padding:12px;font:14px Arial,'Malgun Gothic',sans-serif}.comments textarea{resize:vertical;min-height:90px}.comments button{font-size:14px;min-height:42px;padding:10px 16px;margin-top:10px}.comments button:disabled{opacity:.5;cursor:wait}.comment{padding:16px 0;border-top:1px solid #edf0f5}.comment p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.6}.comment time{display:block;font-size:11px;color:#798395;margin-top:5px}#comment-status{font-size:13px;color:#65738a;line-height:1.6}input:focus-visible,textarea:focus-visible{outline:2px solid #5266db;outline-offset:2px}
+</style>
+</head>
+<body><main><header><h1>기본 계산기</h1><p>일상의 계산을 간편하게</p></header><section class="calculator" aria-label="사칙연산 계산기"><div class="screen"><div class="expression" id="expression"></div><output id="display" aria-live="polite">0</output></div><div class="keys">
+<button class="utility" data-key="clear">AC</button><button class="utility" data-key="sign" aria-label="부호 바꾸기">±</button><button class="utility" data-key="back" aria-label="한 자리 지우기">⌫</button><button class="operator" data-key="/" aria-label="나누기">÷</button>
+<button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button><button class="operator" data-key="*" aria-label="곱하기">×</button>
+<button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button><button class="operator" data-key="-" aria-label="빼기">−</button>
+<button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button class="operator" data-key="+" aria-label="더하기">＋</button>
+<button class="zero" data-key="0">0</button><button data-key="." aria-label="소수점">.</button><button class="equals" data-key="=" aria-label="계산 결과">＝</button>
+</div></section><footer>키보드로도 입력할 수 있어요<br>Enter 계산 · Backspace 지우기 · Esc 초기화</footer></main><script>
+let current='0', previous=null, operator=null, fresh=false, expression='';
+const symbols={'+':'+','-':'−','*':'×','/':'÷'};
+function calculate(a,b,op){if(op==='/'){if(b===0)throw Error('0으로 나눌 수 없어요');return a/b}return op==='+'?a+b:op==='-'?a-b:a*b}
+function render(){document.getElementById('display').textContent=current;document.getElementById('expression').textContent=expression}
+function input(key){
+ if(key==='clear'){current='0';previous=null;operator=null;fresh=false;expression='';render();return}
+ if(!Number.isFinite(Number(current))){current='0';previous=null;operator=null;fresh=false;expression=''}
+ if(/^[0-9.]$/.test(key)){if(fresh){current='0';fresh=false;if(!operator)expression=''}if(key==='.'&&!current.includes('.'))current+='.';else if(key!=='.'&&current.replace('-','').length<15)current=current==='0'?key:current+key}
+ else if(key==='back'){if(!fresh)current=current.length>1?current.slice(0,-1):'0';if(current==='-')current='0'}
+ else if(key==='sign'){if(Number(current)!==0)current=current.startsWith('-')?current.slice(1):'-'+current}
+ else if(symbols[key]){try{if(operator&&!fresh)current=format(calculate(previous,Number(current),operator));previous=Number(current);operator=key;expression=current+' '+symbols[key];fresh=true}catch(e){fail(e)}}
+ else if(key==='='&&operator){try{const right=Number(current);expression=previous+' '+symbols[operator]+' '+current+' =';current=format(calculate(previous,right,operator));operator=null;previous=null;fresh=true}catch(e){fail(e)}}
+ render();
+}
+function format(value){if(!Number.isFinite(value))throw Error('계산 범위를 초과했어요');return String(Number(value.toPrecision(12)))}
+function fail(e){current=e.message;expression='';previous=null;operator=null;fresh=true}
+document.querySelectorAll('[data-key]').forEach(button=>button.addEventListener('click',()=>input(button.dataset.key)));
+document.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey)return;const key=({'Enter':'=','Escape':'clear','Backspace':'back','Delete':'clear','x':'*'})[e.key]||e.key;if(/^[0-9.+*/=-]$/.test(key)||['clear','back'].includes(key)){e.preventDefault();input(key)}});
+
+</script>
+<script>
+// Firebase 콘솔 → 프로젝트 설정 → 내 앱의 firebaseConfig를 입력하세요.
+const firebaseConfig = { apiKey: '', authDomain: '', projectId: '', appId: '' };
+const commentsSection = document.createElement('section');
+commentsSection.className = 'comments';
+commentsSection.setAttribute('aria-labelledby', 'comments-title');
+commentsSection.innerHTML = `<h2 id="comments-title">댓글</h2><form id="comment-form"><label for="comment-name">이름</label><input id="comment-name" maxlength="30" required placeholder="이름을 입력하세요" autocomplete="nickname"><label for="comment-body">댓글</label><textarea id="comment-body" maxlength="500" required placeholder="댓글을 남겨주세요"></textarea><button class="equals" id="comment-submit" disabled>댓글 등록</button></form><p id="comment-status" role="status">댓글 연결을 준비하고 있어요.</p><div id="comment-list"></div>`;
+document.querySelector('main').append(commentsSection);
+// 댓글 작성 중에는 계산기 단축키가 입력을 가로채지 않도록 합니다.
+commentsSection.addEventListener('keydown', event => event.stopPropagation());
+const statusText = document.getElementById('comment-status');
+const submitButton = document.getElementById('comment-submit');
+const form = document.getElementById('comment-form');
+form.addEventListener('submit', event => event.preventDefault());
+async function connectComments() {
+ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
+  statusText.textContent = 'Firebase 연결 설정 후 댓글을 사용할 수 있어요.';
+  return;
+ }
+ try {
+  const base = 'https://www.gstatic.com/firebasejs/12.0.0/';
+  const [appSDK, authSDK, dbSDK] = await Promise.all([import(base+'firebase-app.js'), import(base+'firebase-auth.js'), import(base+'firebase-firestore.js')]);
+  const app = appSDK.initializeApp(firebaseConfig);
+  const auth = authSDK.getAuth(app);
+  await authSDK.signInAnonymously(auth);
+  const db = dbSDK.getFirestore(app);
+  const comments = dbSDK.collection(db, 'calculator_comments');
+  let ready = false;
+  dbSDK.onSnapshot(dbSDK.query(comments, dbSDK.orderBy('createdAt','desc'), dbSDK.limit(50)), snapshot => {
+   ready = true;
+   submitButton.disabled = false;
+   const list = document.getElementById('comment-list');
+   list.replaceChildren();
+   snapshot.forEach(item => {
+    const data = item.data();
+    const article = document.createElement('article'); article.className = 'comment';
+    const name = document.createElement('strong'); name.textContent = data.name;
+    const time = document.createElement('time');
+    const date = data.createdAt?.toDate();
+    time.textContent = date ? date.toLocaleString('ko-KR') : '등록 중…';
+    if (date) time.dateTime = date.toISOString();
+    const body = document.createElement('p'); body.textContent = data.body;
+    article.append(name,time,body);
+    if (data.uid === auth.currentUser?.uid) {
+     const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '삭제';
+     remove.addEventListener('click', async () => {
+      remove.disabled = true;
+      try { await dbSDK.deleteDoc(item.ref); } catch { statusText.textContent = '삭제하지 못했어요. 다시 시도해 주세요.'; remove.disabled = false; }
+     });
+     article.append(remove);
+    }
+    list.append(article);
+   });
+   statusText.textContent = snapshot.empty ? '첫 댓글을 남겨보세요.' : '최근 댓글 '+snapshot.size+'개';
+  }, () => { ready = false; submitButton.disabled = true; statusText.textContent = '댓글을 불러오지 못했어요. Firebase 설정과 연결을 확인해 주세요.'; });
+  form.addEventListener('submit', async event => {
+   event.preventDefault();
+   if (!ready || submitButton.disabled) return;
+   const name = document.getElementById('comment-name').value.trim();
+   const body = document.getElementById('comment-body').value.trim();
+   if (!name || !body) { statusText.textContent = '이름과 댓글을 입력해 주세요.'; return; }
+   submitButton.disabled = true;
+   try {
+    await dbSDK.addDoc(comments, {name,body,uid:auth.currentUser.uid,createdAt:dbSDK.serverTimestamp()});
+    document.getElementById('comment-body').value = '';
+    statusText.textContent = '댓글을 등록했어요.';
+   } catch { statusText.textContent = '댓글을 등록하지 못했어요. 연결을 확인하고 다시 시도해 주세요.'; }
+   finally { submitButton.disabled = !ready; }
+  });
+ } catch { statusText.textContent = 'Firebase에 연결하지 못했어요. 설정과 인터넷 연결을 확인해 주세요.'; }
+}
+connectComments();
+</script></body></html>

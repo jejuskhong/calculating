@@ -1,0 +1,6 @@
+calculator/
+.env
+.env.*
+node_modules/
+*-firebase-adminsdk-*.json
+service-account*.json
